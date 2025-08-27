@@ -98,6 +98,10 @@
   <button onclick="findTrades()">Find Trades</button>
 </div>
 
+    <div class="row" style="margin-top:8px;">
+  <button onclick="findTradesMulti()">Find Multi-Player Trades (2×2)</button>
+</div>
+
 
     <pre id="outBox" style="background:#f7f7f7;padding:10px;border-radius:8px;white-space:pre-wrap;"></pre>
   </div>
@@ -304,6 +308,30 @@
     if (!leagueKey) return alert("Pick a league.");
     if (!teamKey) return alert("Pick a team.");
     const url = `${b}/league/${encodeURIComponent(leagueKey)}/trade_finder?my_team_key=${encodeURIComponent(teamKey)}&per_team=5&max_results=20`;
+    try {
+      const r = await fetch(url, { credentials: "include" });
+      const j = await r.json();
+      out.textContent = JSON.stringify(j, null, 2);
+    } catch (e) {
+      out.textContent = "Error: " + e;
+    }
+  }
+      async function findTradesMulti() {
+    const b = getBackend();
+    const leagueKey = document.getElementById("leagueSel").value;
+    const teamKey = document.getElementById("teamSel").value;
+    const out = document.getElementById("outBox");
+    if (!b) return alert("Set backend URL first.");
+    if (!leagueKey) return alert("Pick a league.");
+    if (!teamKey) return alert("Pick a team.");
+
+    // tweak params here if you want bigger trades
+    const url = `${b}/league/${encodeURIComponent(leagueKey)}/trade_finder_multi` +
+                `?my_team_key=${encodeURIComponent(teamKey)}` +
+                `&per_team=6&max_from_me=2&max_from_them=2` +
+                `&include_weak_starters=false&include_their_weak_starters=false` +
+                `&max_results=40`;
+
     try {
       const r = await fetch(url, { credentials: "include" });
       const j = await r.json();
