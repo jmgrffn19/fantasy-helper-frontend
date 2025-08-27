@@ -92,6 +92,12 @@
   <input id="posFilter" placeholder="FA Pos (optional, e.g. RB)" style="max-width:160px;">
   <button onclick="rankFreeAgents()">Rank Free Agents</button>
 </div>
+    
+    <div class="row" style="margin-top:8px;">
+  <button onclick="faWithDrops()">FA: Recommend Drops</button>
+  <button onclick="findTrades()">Find Trades</button>
+</div>
+
 
     <pre id="outBox" style="background:#f7f7f7;padding:10px;border-radius:8px;white-space:pre-wrap;"></pre>
   </div>
@@ -262,6 +268,44 @@
     const qs = pos ? `&pos=${encodeURIComponent(pos)}` : "";
     try {
       const r = await fetch(`${b}/league/${encodeURIComponent(leagueKey)}/free_agents_ranked?count=${encodeURIComponent(count)}${qs}`, { credentials: "include" });
+      const j = await r.json();
+      out.textContent = JSON.stringify(j, null, 2);
+    } catch (e) {
+      out.textContent = "Error: " + e;
+    }
+  }
+      async function faWithDrops() {
+    const b = getBackend();
+    const leagueKey = document.getElementById("leagueSel").value;
+    const teamKey = document.getElementById("teamSel").value;
+    const count = (document.getElementById("faCount").value || "25").trim();
+    const pos = (document.getElementById("posFilter")?.value || "").trim();
+    const out = document.getElementById("outBox");
+    if (!b) return alert("Set backend URL first.");
+    if (!leagueKey) return alert("Pick a league.");
+    if (!teamKey) return alert("Pick a team.");
+    const qs = pos ? `&pos=${encodeURIComponent(pos)}` : "";
+    const url = `${b}/league/${encodeURIComponent(leagueKey)}/free_agents_with_drops?team_key=${encodeURIComponent(teamKey)}&count=${encodeURIComponent(count)}${qs}`;
+    try {
+      const r = await fetch(url, { credentials: "include" });
+      const j = await r.json();
+      out.textContent = JSON.stringify(j, null, 2);
+    } catch (e) {
+      out.textContent = "Error: " + e;
+    }
+  }
+
+  async function findTrades() {
+    const b = getBackend();
+    const leagueKey = document.getElementById("leagueSel").value;
+    const teamKey = document.getElementById("teamSel").value;
+    const out = document.getElementById("outBox");
+    if (!b) return alert("Set backend URL first.");
+    if (!leagueKey) return alert("Pick a league.");
+    if (!teamKey) return alert("Pick a team.");
+    const url = `${b}/league/${encodeURIComponent(leagueKey)}/trade_finder?my_team_key=${encodeURIComponent(teamKey)}&per_team=5&max_results=20`;
+    try {
+      const r = await fetch(url, { credentials: "include" });
       const j = await r.json();
       out.textContent = JSON.stringify(j, null, 2);
     } catch (e) {
