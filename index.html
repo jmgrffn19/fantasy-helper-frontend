@@ -54,46 +54,177 @@
       <pre id="leaguesBox" style="background:#f7f7f7;padding:10px;border-radius:8px;"></pre>
     </div>
 
-    <script>
-      function getBackend() {
-        return localStorage.getItem("backendUrl") || document.getElementById("backendUrl").value;
-      }
-      function saveBackend() {
-        const url = document.getElementById("backendUrl").value.trim();
-        if (!url) { alert("Please enter your backend URL"); return; }
-        localStorage.setItem("backendUrl", url);
-        document.getElementById("saveMsg").textContent = "Saved!";
-      }
-      function connectYahoo(e) {
-        e.preventDefault();
-        const b = getBackend();
-        if (!b) { alert("Save your backend URL first."); return; }
-        window.location.href = b + "/auth/yahoo/login";
-      }
-       async function checkAuth() {
+    <!-- Step 5 — Choose a League -->
+  <div class="card">
+    <h2>Step 5 — Choose a League</h2>
+    <p>Click to load your leagues, then pick one.</p>
+    <div class="row">
+      <button onclick="loadLeaguesDropdown()">Load My Leagues</button>
+      <select id="leagueSel" style="min-width:280px;">
+        <option value="">(none yet)</option>
+      </select>
+    </div>
+  </div>
+
+<!-- Step 6 — Work with the selected league -->
+  <div class="card">
+   <h2>Step 6 — Teams, Roster, Free Agents</h2>
+
+    <div class="row" style="margin-bottom:8px;">
+      <button onclick="loadTeams()">Load Teams</button>
+      <select id="teamSel" style="min-width:280px;">
+        <option value="">(no teams yet)</option>
+      </select>
+    </div>
+
+    <div class="row" style="margin-bottom:8px;">
+      <input id="weekInput" placeholder="Week (optional, e.g. 1)" style="max-width:160px;">
+      <button onclick="loadRoster()">Load Team Roster</button>
+    </div>
+
+    <div class="row" style="margin-bottom:8px;">
+      <input id="faCount" value="25" style="max-width:120px;">
+      <button onclick="loadFreeAgents()">Load Free Agents</button>
+    </div>
+
+    <pre id="outBox" style="background:#f7f7f7;padding:10px;border-radius:8px;white-space:pre-wrap;"></pre>
+  </div>
+
+
+   <script>
+  function getBackend() {
+    return localStorage.getItem("backendUrl") || document.getElementById("backendUrl").value;
+  }
+  function saveBackend() {
+    const url = document.getElementById("backendUrl").value.trim();
+    if (!url) { alert("Please enter your backend URL"); return; }
+    localStorage.setItem("backendUrl", url);
+    document.getElementById("saveMsg").textContent = "Saved!";
+  }
+  function connectYahoo(e) {
+    e.preventDefault();
+    const b = getBackend();
+    if (!b) { alert("Save your backend URL first."); return; }
+    window.location.href = b + "/auth/yahoo/login";
+  }
+  async function checkAuth() {
     const b = getBackend();
     if (!b) { alert("Set backend URL first."); return; }
     try {
-      const r = await fetch(b + "/auth/check", { credentials: "include" });  // <-- add this
+      const r = await fetch(b + "/auth/check", { credentials: "include" });
       const j = await r.json();
       document.getElementById("authMsg").textContent = JSON.stringify(j);
     } catch (e) {
       document.getElementById("authMsg").textContent = "Failed to reach backend: " + e;
     }
   }
-
   async function listLeagues() {
     const b = getBackend();
     if (!b) { alert("Set backend URL first."); return; }
     try {
-      const r = await fetch(b + "/leagues", { credentials: "include" });      // <-- and this
+      const r = await fetch(b + "/leagues", { credentials: "include" });
       const j = await r.json();
       document.getElementById("leaguesBox").textContent = JSON.stringify(j, null, 2);
     } catch (e) {
       document.getElementById("leaguesBox").textContent = "Error: " + e;
     }
   }
-      document.getElementById("backendUrl").value = localStorage.getItem("backendUrl") || "";
-    </script>
+
+  // NEW: load leagues into the dropdown
+  async function loadLeaguesDropdown() {
+    const b = getBackend();
+    if (!b) { alert("Set backend URL first."); return; }
+    const sel = document.getElementById("leagueSel");
+    sel.innerHTML = "<option>(loading...)</option>";
+    try {
+      const r = await fetch(b + "/leagues", { credentials: "include" });
+      const j = await r.json();
+      const leagues = (j && j.leagues) || [];
+      sel.innerHTML = "";
+      if (!leagues.length) {
+        sel.innerHTML = "<option value=''>No leagues found</option>";
+        return;
+      }
+      for (const L of leagues) {
+        const opt = document.createElement("option");
+        opt.value = L.league_key;
+        opt.textContent = `${L.name} — ${L.league_key}`;
+        sel.appendChild(opt);
+      }
+    } catch (e) {
+      sel.innerHTML = "<option value=''>Error loading leagues</option>";
+    }
+  }
+
+  // NEW: load teams for the selected league, fill team dropdown
+  async function loadTeams() {
+    const b = getBackend();
+    const leagueKey = document.getElementById("leagueSel").value;
+    const teamSel = document.getElementById("teamSel");
+    const out = document.getElementById("outBox");
+    if (!b) { alert("Set backend URL first."); return; }
+    if (!leagueKey) { alert("Pick a league first in Step 5."); return; }
+    teamSel.innerHTML = "<option>(loading...)</option>";
+    out.textContent = "";
+    try {
+      const r = await fetch(`${b}/league/${encodeURIComponent(leagueKey)}/teams`, { credentials: "include" });
+      const j = await r.json();
+      out.textContent = JSON.stringify(j, null, 2);
+      const teams = (j && j.teams) || [];
+      teamSel.innerHTML = "";
+      if (!teams.length) {
+        teamSel.innerHTML = "<option value=''>No teams found</option>";
+        return;
+      }
+      for (const T of teams) {
+        const opt = document.createElement("option");
+        opt.value = T.team_key;
+        opt.textContent = `${T.name} — ${T.team_key}`;
+        teamSel.appendChild(opt);
+      }
+    } catch (e) {
+      teamSel.innerHTML = "<option value=''>Error</option>";
+      out.textContent = "Error: " + e;
+    }
+  }
+
+  // NEW: load roster for the selected team (optional week)
+  async function loadRoster() {
+    const b = getBackend();
+    const teamKey = document.getElementById("teamSel").value;
+    const week = (document.getElementById("weekInput").value || "").trim();
+    const out = document.getElementById("outBox");
+    if (!b) { alert("Set backend URL first."); return; }
+    if (!teamKey) { alert("Load teams and pick a team first."); return; }
+    const qs = week ? `?week=${encodeURIComponent(week)}` : "";
+    try {
+      const r = await fetch(`${b}/team/${encodeURIComponent(teamKey)}/roster${qs}`, { credentials: "include" });
+      const j = await r.json();
+      out.textContent = JSON.stringify(j, null, 2);
+    } catch (e) {
+      out.textContent = "Error: " + e;
+    }
+  }
+
+  // NEW: load free agents for the selected league
+  async function loadFreeAgents() {
+    const b = getBackend();
+    const leagueKey = document.getElementById("leagueSel").value;
+    const count = (document.getElementById("faCount").value || "25").trim();
+    const out = document.getElementById("outBox");
+    if (!b) { alert("Set backend URL first."); return; }
+    if (!leagueKey) { alert("Pick a league first in Step 5."); return; }
+    try {
+      const r = await fetch(`${b}/league/${encodeURIComponent(leagueKey)}/free_agents?count=${encodeURIComponent(count)}`, { credentials: "include" });
+      const j = await r.json();
+      out.textContent = JSON.stringify(j, null, 2);
+    } catch (e) {
+      out.textContent = "Error: " + e;
+    }
+  }
+
+  document.getElementById("backendUrl").value = localStorage.getItem("backendUrl") || "";
+</script>
+
   </body>
 </html>
