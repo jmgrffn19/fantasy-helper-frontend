@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Fantasy Helper (Starter)</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 2rem; max-width: 720px; margin: auto; }
+      button, a.btn { padding: 12px 16px; border-radius: 10px; border: 1px solid #ddd; text-decoration: none; display: inline-block; }
+      .card { border: 1px solid #eee; border-radius: 12px; padding: 1rem; margin: 1rem 0; }
+      .muted { color: #666; }
+      .row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+      input { padding: 10px; border-radius: 8px; border: 1px solid #ddd; width: 100%; }
+      code { background: #f7f7f7; padding: 2px 6px; border-radius: 6px; }
+    </style>
+  </head>
+  <body>
+    <h1>Fantasy Helper (Free Starter)</h1>
+    <p class="muted">Paste your backend URL, connect Yahoo, then check connection.</p>
+
+    <div class="card">
+      <h2>Step 1 — Backend URL</h2>
+      <p>Example: <code>https://your-backend.onrender.com</code></p>
+      <input id="backendUrl" placeholder="https://your-backend.onrender.com">
+      <div class="row" style="margin-top:0.75rem;">
+        <button onclick="saveBackend()">Save Backend URL</button>
+        <span id="saveMsg" class="muted"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Step 2 — Connect Yahoo</h2>
+      <p>Click to start the Yahoo login and approve access.</p>
+      <div class="row">
+        <a class="btn" href="#" id="connectBtn" onclick="connectYahoo(event)">Connect Yahoo</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Step 3 — Check Connection</h2>
+      <p>Make sure the frontend can talk to the backend.</p>
+      <div class="row">
+        <button onclick="checkAuth()">Check Connection</button>
+        <span class="muted" id="authMsg"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Step 4 — List Leagues (demo)</h2>
+      <div class="row">
+        <button onclick="listLeagues()">Load Leagues</button>
+      </div>
+      <pre id="leaguesBox" style="background:#f7f7f7;padding:10px;border-radius:8px;"></pre>
+    </div>
+
+    <script>
+      function getBackend() {
+        return localStorage.getItem("backendUrl") || document.getElementById("backendUrl").value;
+      }
+      function saveBackend() {
+        const url = document.getElementById("backendUrl").value.trim();
+        if (!url) { alert("Please enter your backend URL"); return; }
+        localStorage.setItem("backendUrl", url);
+        document.getElementById("saveMsg").textContent = "Saved!";
+      }
+      function connectYahoo(e) {
+        e.preventDefault();
+        const b = getBackend();
+        if (!b) { alert("Save your backend URL first."); return; }
+        window.location.href = b + "/auth/yahoo/login";
+      }
+      async function checkAuth() {
+        const b = getBackend();
+        if (!b) { alert("Set backend URL first."); return; }
+        try {
+          const r = await fetch(b + "/auth/check");
+          const j = await r.json();
+          document.getElementById("authMsg").textContent = JSON.stringify(j);
+        } catch (e) {
+          document.getElementById("authMsg").textContent = "Failed to reach backend: " + e;
+        }
+      }
+      async function listLeagues() {
+        const b = getBackend();
+        if (!b) { alert("Set backend URL first."); return; }
+        try {
+          const r = await fetch(b + "/leagues");
+          const j = await r.json();
+          document.getElementById("leaguesBox").textContent = JSON.stringify(j, null, 2);
+        } catch (e) {
+          document.getElementById("leaguesBox").textContent = "Error: " + e;
+        }
+      }
+      document.getElementById("backendUrl").value = localStorage.getItem("backendUrl") || "";
+    </script>
+  </body>
+</html>
