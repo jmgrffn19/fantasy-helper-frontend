@@ -87,6 +87,12 @@
       <button onclick="loadFreeAgents()">Load Free Agents</button>
     </div>
 
+    <div class="row" style="margin-top:8px;">
+  <button onclick="suggestLineup()">Suggest Starters</button>
+  <input id="posFilter" placeholder="FA Pos (optional, e.g. RB)" style="max-width:160px;">
+  <button onclick="rankFreeAgents()">Rank Free Agents</button>
+</div>
+
     <pre id="outBox" style="background:#f7f7f7;padding:10px;border-radius:8px;white-space:pre-wrap;"></pre>
   </div>
 
@@ -224,6 +230,44 @@
   }
 
   document.getElementById("backendUrl").value = localStorage.getItem("backendUrl") || "";
+
+  
+  async function suggestLineup() {
+    const b = getBackend();
+    const leagueKey = document.getElementById("leagueSel").value;
+    const teamKey = document.getElementById("teamSel").value;
+    const week = (document.getElementById("weekInput").value || "").trim();
+    const out = document.getElementById("outBox");
+    if (!b) return alert("Set backend URL first.");
+    if (!leagueKey) return alert("Pick a league first.");
+    if (!teamKey) return alert("Load teams and pick a team first.");
+    const qs = week ? `&week=${encodeURIComponent(week)}` : "";
+    try {
+      const r = await fetch(`${b}/team/${encodeURIComponent(teamKey)}/start_sit?league_key=${encodeURIComponent(leagueKey)}${qs}`, { credentials: "include" });
+      const j = await r.json();
+      out.textContent = JSON.stringify(j, null, 2);
+    } catch (e) {
+      out.textContent = "Error: " + e;
+    }
+  }
+
+  async function rankFreeAgents() {
+    const b = getBackend();
+    const leagueKey = document.getElementById("leagueSel").value;
+    const count = (document.getElementById("faCount").value || "25").trim();
+    const pos = (document.getElementById("posFilter").value || "").trim();
+    const out = document.getElementById("outBox");
+    if (!b) return alert("Set backend URL first.");
+    if (!leagueKey) return alert("Pick a league first.");
+    const qs = pos ? `&pos=${encodeURIComponent(pos)}` : "";
+    try {
+      const r = await fetch(`${b}/league/${encodeURIComponent(leagueKey)}/free_agents_ranked?count=${encodeURIComponent(count)}${qs}`, { credentials: "include" });
+      const j = await r.json();
+      out.textContent = JSON.stringify(j, null, 2);
+    } catch (e) {
+      out.textContent = "Error: " + e;
+    }
+  }
 </script>
 
   </body>
