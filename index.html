@@ -70,28 +70,29 @@
         if (!b) { alert("Save your backend URL first."); return; }
         window.location.href = b + "/auth/yahoo/login";
       }
-      async function checkAuth() {
-        const b = getBackend();
-        if (!b) { alert("Set backend URL first."); return; }
-        try {
-          const r = await fetch(b + "/auth/check");
-          const j = await r.json();
-          document.getElementById("authMsg").textContent = JSON.stringify(j);
-        } catch (e) {
-          document.getElementById("authMsg").textContent = "Failed to reach backend: " + e;
-        }
-      }
-      async function listLeagues() {
-        const b = getBackend();
-        if (!b) { alert("Set backend URL first."); return; }
-        try {
-          const r = await fetch(b + "/leagues");
-          const j = await r.json();
-          document.getElementById("leaguesBox").textContent = JSON.stringify(j, null, 2);
-        } catch (e) {
-          document.getElementById("leaguesBox").textContent = "Error: " + e;
-        }
-      }
+       async function checkAuth() {
+    const b = getBackend();
+    if (!b) { alert("Set backend URL first."); return; }
+    try {
+      const r = await fetch(b + "/auth/check", { credentials: "include" });  // <-- add this
+      const j = await r.json();
+      document.getElementById("authMsg").textContent = JSON.stringify(j);
+    } catch (e) {
+      document.getElementById("authMsg").textContent = "Failed to reach backend: " + e;
+    }
+  }
+
+  async function listLeagues() {
+    const b = getBackend();
+    if (!b) { alert("Set backend URL first."); return; }
+    try {
+      const r = await fetch(b + "/leagues", { credentials: "include" });      // <-- and this
+      const j = await r.json();
+      document.getElementById("leaguesBox").textContent = JSON.stringify(j, null, 2);
+    } catch (e) {
+      document.getElementById("leaguesBox").textContent = "Error: " + e;
+    }
+  }
       document.getElementById("backendUrl").value = localStorage.getItem("backendUrl") || "";
     </script>
   </body>
